@@ -1,0 +1,50 @@
+services:
+  app:
+    build: .
+    networks:
+      - petclinic-network
+    depends_on:
+      - "mysql"
+    ports:
+      - "9123:9123"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9123/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+  mysql:
+    image: mysql:9.5
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+      - MYSQL_USER=petclinic
+      - MYSQL_PASSWORD=petclinic
+      - MYSQL_DATABASE=petclinic
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - petclinic-network
+    volumes:
+      - "./conf.d:/etc/mysql/conf.d:ro"
+
+networks:
+  petclinic-network:
+    driver: bridge
